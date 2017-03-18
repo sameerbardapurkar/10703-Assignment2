@@ -75,6 +75,10 @@ class GreedyPolicy(Policy):
     This is a pure exploitation policy.
     """
 
+    def __init__(self, num_actions):
+        assert num_actions >= 1
+        self.num_actions = num_actions
+
     def select_action(self, q_values, **kwargs):  # noqa: D102
         return np.argmax(q_values)
 
@@ -91,8 +95,10 @@ class GreedyEpsilonPolicy(Policy):
      Initial probability of choosing a random action. Can be changed
      over time.
     """
-    def __init__(self, epsilon):
-        pass
+    def __init__(self, num_actions, epsilon):
+        self.epsilon = epsilon
+        assert num_actions >= 1
+        self.num_actions = num_actions
 
     def select_action(self, q_values, **kwargs):
         """Run Greedy-Epsilon for the given Q-values.
@@ -108,8 +114,12 @@ class GreedyEpsilonPolicy(Policy):
         int:
           The action index chosen.
         """
+        rand = random.uniform(0, 1)
 
-    pass
+        if(rand <= self.epsilon):
+            return np.random.randint(0, self.num_actions)
+        else:
+            return np.argmax(q_values)
 
 
 class LinearDecayGreedyEpsilonPolicy(Policy):
@@ -129,9 +139,14 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
 
     """
 
-    def __init__(self, policy, attr_name, start_value, end_value,
+    def __init__(self, policy = 0, attr_name = 0, start_value, end_value,
                  num_steps):  # noqa: D102
-        pass
+        self.epsilon_start = start_value
+        self.epsilon_end = end_value
+        self.num_steps = num_steps
+        assert num_actions >= 1
+        self.num_actions = num_actions     
+        self.initial_epsilon = start_value
 
     def select_action(self, **kwargs):
         """Decay parameter and select action.
@@ -148,8 +163,22 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
         Any:
           Selected action.
         """
-        pass
+        self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
+
+        if(self.epsilon_start <= 0.0) {
+            reset()
+            self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
+        }
+
+        rand = random.uniform(0, 1)
+
+        if(rand <= self.epsilon_end):
+            return np.random.randint(0, self.num_actions)
+        else:
+            return np.argmax(q_values)
 
     def reset(self):
         """Start the decay over at the start value."""
-        pass
+        self.epsilon_start = self.initial_epsilon
+
+
