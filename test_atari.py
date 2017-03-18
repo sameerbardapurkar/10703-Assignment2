@@ -67,6 +67,12 @@ batch_size = 100
 linear_q_net = LinearQNetwork(q_network, preprocessor, memory, policy, gamma,
 			   				  target_update_freq, num_burn_in, train_freq,
 			   				  batch_size)
-print("Created linear agent")
 
+#Define the loss function
+linear_q_net.compile()
+#Define the optimizer : Defaulted for now
+print("Created and compiled linear agent")
+
+#now run fit
+linear_q_net.fit(env)
 

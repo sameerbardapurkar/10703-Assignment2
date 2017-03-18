@@ -38,7 +38,7 @@ class HistoryPreprocessor(Preprocessor):
 
         Useful when you start a new episode.
         """
-        self.history_states = np.zeros((state_size[0], state_size[1], history_length), dtype=float)
+        self.history_states = np.zeros((self.state_size[0], self.state_size[1], self.history_length), dtype=float)
 
     def get_config(self):
         return {'history_length': self.history_length}

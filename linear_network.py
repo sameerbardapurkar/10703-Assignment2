@@ -4,6 +4,7 @@ from dqn import DQNAgent
 from core import *
 from policy import *
 from preprocessors import *
+import keras
 from keras import optimizers
 from objectives import *
 
@@ -89,7 +90,7 @@ class LinearQNetwork(DQNAgent):
         self.batch_size = batch_size
         self.num_actions = 6
 
-    def compile(self, optimizer=keras.optimizers.Adam(), loss_func):
+    def compile(self, loss_func='mse', optimizer=keras.optimizers.Adam()):
         """Setup all of the TF graph variables/ops.
 
         This is inspired by the compile method on the
@@ -106,8 +107,8 @@ class LinearQNetwork(DQNAgent):
         keras.optimizers.Optimizer class. Specifically the Ada#m
         optimizer. 
         """
-        (self.q_network).add(Dense(self.num_actions, input_dim=28224, activation = 'linear'))
-        (self.q_network).compile(loss='objective.mean_huber_loss', optimizer=keras.optimizers.Adam())
+        (self.q_network).add(keras.layers.Dense(self.num_actions, input_dim=28224, activation = 'linear'))
+        (self.q_network).compile(loss='mse', optimizer=keras.optimizers.Adam())
 
     def calc_q_values(self, state):
         """Given a state (or batch of states) calculate the Q-values.
@@ -142,7 +143,7 @@ class LinearQNetwork(DQNAgent):
         selected action
         """
         epsilon = 0.3; # hardcoded for now
-        q_values = calculate_q_values(state)
+        q_values = self.calc_q_values(state)
         return self.policy.select_action(q_values)		
 
     def update_policy(self):
@@ -192,18 +193,16 @@ class LinearQNetwork(DQNAgent):
             done = False
             state = env.reset()
             self.preprocessor.reset()
-            while(done == False & length < max_episode_length)
-                action = select_action(state)
+            while(done == False & length < max_episode_length):
+                action = self.select_action(state)
                 new_state, reward, done, info = env.step(action)
-                mem_state = 
-                        self.preprocessor.process_state_for_memory(new_state)
+                env.render()
+                mem_state = self.preprocessor.process_state_for_memory(new_state)
                 self.memory.append(mem_state, action, reward) #added to replay 
-                net_state_current = 
-                            self.preprocessor.process_state_for_network(state)
-                net_state_next = 
-                        self.preprocessor.process_state_for_network(new_state)
-                output_qvals = calc_q_values(net_state_next)
-                target_f = calc_q_values(net_state_current)
+                net_state_current = self.preprocessor.process_state_for_network(state)
+                net_state_next = self.preprocessor.process_state_for_network(new_state)
+                output_qvals = self.calc_q_values(net_state_next)
+                target_f = self.calc_q_values(net_state_current)
                 target_f[action] = reward + gamma*max(output_qvals)
                 self.q_network.fit(net_state_current, target_f, 1, 1)
                 #net_state is the phi, with four frames
