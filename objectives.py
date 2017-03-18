@@ -3,7 +3,6 @@
 import tensorflow as tf
 import semver
 
-
 def huber_loss(y_true, y_pred, max_grad=1.):
     """Calculate the huber loss.
 
@@ -24,8 +23,18 @@ def huber_loss(y_true, y_pred, max_grad=1.):
     tf.Tensor
       The huber loss.
     """
-    pass
 
+    assert y_true.shape[0] == y_pred.shape[0]
+
+    result = np.zeros(y_true.shape)
+
+    for i in range(0, y_true.shape[0]):
+      if(fabs(y_true[i] - y_pred[i]) < max_grad)
+        result[i] = fabs(y_true[i] - y_pred[i])*fabs(y_true[i] - y_pred[i])
+      else:
+        result[i] = max_grad * (fabs(y_true[i] - y_pred[i]) - (max_grad/2.0))
+    
+    return result
 
 def mean_huber_loss(y_true, y_pred, max_grad=1.):
     """Return mean huber loss.
@@ -48,4 +57,7 @@ def mean_huber_loss(y_true, y_pred, max_grad=1.):
     tf.Tensor
       The mean huber loss.
     """
-    pass
+    
+    result = huber_loss(y_true, y_pred, max_grad=1.)
+
+    return np.mean(result)
