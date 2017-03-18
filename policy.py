@@ -139,7 +139,7 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
 
     """
 
-    def __init__(self, policy = 0, attr_name = 0, start_value, end_value,
+    def __init__(self, policy, attr_name, start_value, end_value,
                  num_steps):  # noqa: D102
         self.epsilon_start = start_value
         self.epsilon_end = end_value
@@ -165,7 +165,7 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
         """
         self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
 
-        if(self.epsilon_start <= 0.0) {
+        if(self.epsilon_start <= self.epsilon_end) {
             reset()
             self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
         }
