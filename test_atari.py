@@ -43,6 +43,8 @@ while done == False:
     img = img.convert('L')
     img = img.resize((84, 84), 3)
     np_img = np.asarray(img)
+    img2 = Image.fromarray(np_img, 'L')
+    img2.show()
     print(np_img)
     print(np_img.shape)
     time.sleep(0.5)

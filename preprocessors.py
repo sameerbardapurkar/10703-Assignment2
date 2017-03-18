@@ -107,10 +107,11 @@ class AtariPreprocessor(Preprocessor):
         Basically same as process state for memory, but this time
         outputs float32 images.
         """
-        img = Image.fromarray(state, 'RGB')
-        img = img.crop((0, 20, 160, 210))
+        #img = Image.fromarray(state, 'RGB')
+        img = Image.fromarray(state, 'L')
+        #img = img.crop((0, 20, 160, 210))
         img = img.convert('F')
-        img = img.resize((84, 84), 3)
+        #img = img.resize((84, 84), 3)
         np_img = np.asarray(img)
         return np_img
 
