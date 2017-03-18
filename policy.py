@@ -165,10 +165,10 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
         """
         self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
 
-        if(self.epsilon_start <= self.epsilon_end) {
+        if(self.epsilon_start <= self.epsilon_end):
             reset()
             self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
-        }
+        
 
         rand = random.uniform(0, 1)
 

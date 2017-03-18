@@ -8,7 +8,7 @@ from keras import optimizers
 from objectives import *
 
 class LinearReplayMemory(ReplayMemory):
-	def __init__(self, max_size, window_length):
+	def __init__(self, max_size=10000, window_length=5):
 		self.max_size = max_size
 		self.window_length = window_length
 		self.Memory = [0]*max_size
@@ -41,10 +41,9 @@ class LinearReplayMemory(ReplayMemory):
 		stop = False
 		location = start_location
 		count = 0
-		while(stop == False && len(samples) <= batch_size):
+		while(stop == False & len(samples) <= batch_size):
 			terminal = False
-			(state_count, state, action, reward, state_succ_count) = 
-				self.Memory[location]
+			(state_count, state, action, reward, state_succ_count) = self.Memory[location]
 			location = (location + 1)%max_size
 			(succ_state_count, succ_state, succ_action, succ_reward,
 				succ_state_succ_count) = self.Memory[location]
@@ -70,16 +69,16 @@ class LinearReplayMemory(ReplayMemory):
 
 class LinearQNetwork(DQNAgent):
 	def __init__(self,
-			   q_network,
-			   preprocessor,
-			   memory,
-			   policy,
-			   gamma,
-			   target_update_freq,
-			   num_burn_in,
-			   train_freq,
-			   batch_size):
-		#self.q_network = q_network
+			     q_network,
+			     preprocessor,
+			     memory,
+			     policy,
+			     gamma,
+			     target_update_freq,
+			     num_burn_in,
+			     train_freq,
+			     batch_size):
+		self.q_network = q_network
         self.preprocessor = preprocessor
         self.gamma = gamma
         self.policy = policy
@@ -89,7 +88,7 @@ class LinearQNetwork(DQNAgent):
         self.batch_size = batch_size
         self.num_actions = 6
 
-	def compile(self, optimizer, loss_func):
+	def compile(self, optimizer=keras.optimizers.Adam(), loss_func):
         """Setup all of the TF graph variables/ops.
 
         This is inspired by the compile method on the
@@ -103,15 +102,13 @@ class LinearQNetwork(DQNAgent):
         losses.
 
         The optimizer can be whatever class you want. We used the
-        keras.optimizers.Optimizer class. Specifically the Adam
+        keras.optimizers.Optimizer class. Specifically the Ada#m
         optimizer.
         """
-        q_network.add(Dense(self.num_actions, 
-                                    input_dim=28224, activation = 'linear'))
-        q_network.compile(loss='objective.mean_huber_loss',
-                            optimizer=keras.optimizers.Adam())
 
-        pass
+        self.q_network.add(Dense(self.num_actions, input_dim=28224, activation = 'linear'))
+        self.q_network.compile(loss='objective.mean_huber_loss', optimizer=keras.optimizers.Adam())
+
 
     def calc_q_values(self, state):
         """Given a state (or batch of states) calculate the Q-values.
@@ -146,7 +143,8 @@ class LinearQNetwork(DQNAgent):
         selected action
         """
         epsilon = 0.3; # hardcoded for now
-		return policy.GreedyEpsilonPolicy(self.num_actions, epsilon)		
+        q_values = calculate_q_values(state)
+		return self.policy.select_action(q_values)		
 
     def update_policy(self):
         """Update your policy.
@@ -165,7 +163,7 @@ class LinearQNetwork(DQNAgent):
         """
         pass
 
-    def fit(self, env, num_iterations, max_episode_length=None):
+    def fit(self, env, num_iterations = 100, max_episode_length=1000):
         """Fit your model to the provided environment.
 
         Its a good idea to print out things like loss, average reward,
@@ -190,8 +188,31 @@ class LinearQNetwork(DQNAgent):
           How long a single episode should last before the agent
           resets. Can help exploration.
         """
-        pass
+        for i in range(0, num_iterations):
+            length = 0
+            done = False
+            state = env.reset()
+            self.preprocessor.reset()
+            while(done == False && length < max_episode_length)
+                action = select_action(state)
+                new_state, reward, done, info = env.step(action)
+                mem_state = 
+                        self.preprocessor.process_state_for_memory(new_state)
+                self.memory.append(mem_state, action, reward) #added to replay 
+                net_state_current = 
+                            self.preprocessor.process_state_for_network(state)
+                net_state_next = 
+                        self.preprocessor.process_state_for_network(new_state)
+                output_qvals = calc_q_values(net_state_next)
+                target_f = calc_q_values(net_state_current)
+                target_f[action] = reward + gamma*max(output_qvals)
+                self.q_network.fit(net_state_current, target_f, 1, 1)
+                #net_state is the phi, with four frames
 
+
+
+
+    
     def evaluate(self, env, num_episodes, max_episode_length=None):
         """Test your agent with a provided environment.
         

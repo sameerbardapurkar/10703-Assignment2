@@ -142,10 +142,17 @@ class PreprocessorSequence(Preprocessor):
     state = atari.process_state_for_network(state)
     return history.process_state_for_network(state)
     """
-    def __init__(self, preprocessors):
-        self.preprocessors = preprocessors
+    def __init__(self, atari, history):
+        self.atari = atari
+        self.history = history
 
-    def preprocess(state)
-        for preprocessor in preprocessors:
-            state = preprocessor.process_state_for_network(state)
-        
+    def preprocess_for_network(self, state):
+        state = self.atari.process_state_for_network(state)
+        return self.history.process_state_for_network(state)
+
+    def preprocess_for_memory(self, state):
+        state = self.atari.process_state_for_memory(state)
+        return state
+    
+    def reset(self):
+        self.history.reset()

@@ -20,37 +20,53 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import RMSprop
 from keras.utils import np_utils
+from dqn import DQNAgent
+from core import ReplayMemory
+from dqn import DQNAgent
+from core import *
+from policy import *
+from preprocessors import *
+from keras import optimizers
+from objectives import *
+from linear_network import *
 
 #initialize neural network to store policy
 
 #load environment
 env = gym.make('SpaceInvaders-v0')
-state = env.reset()
-sars = []
-states = []
-print state
-#env = gym.wrappers.Monitor(env, 'monitor')
-done = False
-samples = []
-while done == False:
-    action = env.action_space.sample()
-    for i in env.action_space:
-    	print i
-    print env.action_space
-    new_state, reward, done, info = env.step(action)
-    env.render()
-    state = new_state
-    img = Image.fromarray(state, 'RGB')
-    img = img.crop((0, 20, 160, 210))
-    img = img.convert('L')
-    img = img.resize((84, 84), 3)
-    np_img = np.asarray(img)
-    img2 = Image.fromarray(np_img, 'L')
-    img2.show()
-    print(np_img)
-    print(np_img.shape)
-    time.sleep(0.5)
-    for proc in psutil.process_iter():
-    	if proc.name() == "display":
-        	proc.kill()
-env.close()
+
+#make the q_network
+q_network = Sequential()
+
+#make the preprocessors
+history_preproc = HistoryPreprocessor(4)
+atari_preproc = AtariPreprocessor()
+preprocessor = PreprocessorSequence(atari_preproc, history_preproc)
+#make the replay memory
+memory = LinearReplayMemory()
+
+#make the policy
+policy = GreedyEpsilonPolicy(6, 0.35)
+
+#take the gamma, nicely
+gamma = 0.9
+
+#target_update_freq : DUMMY
+target_update_freq = 10
+
+#num_burn_in : DUMMY
+num_burn_in = 10
+
+#train_freq : DUMMY
+train_freq = 10
+
+#batch_size
+batch_size = 100
+
+#Make the linear q network
+linear_q_net = LinearQNetwork(q_network, preprocessor, memory, policy, gamma,
+			   				  target_update_freq, num_burn_in, train_freq,
+			   				  batch_size)
+print("Created linear agent")
+
+

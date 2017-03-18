@@ -29,7 +29,7 @@ def huber_loss(y_true, y_pred, max_grad=1.):
     result = np.zeros(y_true.shape)
 
     for i in range(0, y_true.shape[0]):
-      if(fabs(y_true[i] - y_pred[i]) < max_grad)
+      if(fabs(y_true[i] - y_pred[i]) < max_grad):
         result[i] = fabs(y_true[i] - y_pred[i])*fabs(y_true[i] - y_pred[i])
       else:
         result[i] = max_grad * (fabs(y_true[i] - y_pred[i]) - (max_grad/2.0))
