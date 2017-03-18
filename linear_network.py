@@ -19,10 +19,10 @@ class LinearReplayMemory(ReplayMemory):
 		self.state_count = 0
 
 	def append(self, state, action, reward):
-		Memory[InsertIndex%max_size] = (state_count, state, action, reward,
-							   state_count + 1)
-		self.InsertIndex = InsertIndex + 1
-		self.state_count = state_count + 1
+		self.Memory[self.InsertIndex%self.max_size] = (self.state_count, state, action, reward,
+							   self.state_count + 1)
+		self.InsertIndex = self.InsertIndex + 1
+		self.state_count = self.state_count + 1
 
 	def end_episode(self, final_state, is_terminal):
 		self.final_state = final_state
@@ -82,6 +82,7 @@ class LinearQNetwork(DQNAgent):
     		     batch_size): 
         self.q_network = q_network
         self.preprocessor = preprocessor
+        self.memory = memory
         self.gamma = gamma
         self.policy = policy
         self.target_update_freq = target_update_freq
@@ -119,7 +120,7 @@ class LinearQNetwork(DQNAgent):
         ------
         Q-values for the state(s)
         """
-        return (self.q_network).predict(state)        
+        return self.q_network.predict(self.flatten_for_network(state))      
 
     def select_action(self, state, **kwargs):
         """Select the action based on the current state.
@@ -194,19 +195,28 @@ class LinearQNetwork(DQNAgent):
             state = env.reset()
             self.preprocessor.reset()
             while(done == False & length < max_episode_length):
-                action = self.select_action(state)
+                net_state_current = self.preprocessor.preprocess_for_network(state)
+                
+                action = self.select_action(net_state_current)
                 new_state, reward, done, info = env.step(action)
                 env.render()
-                mem_state = self.preprocessor.process_state_for_memory(new_state)
+                mem_state = self.preprocessor.preprocess_for_memory(new_state)
                 self.memory.append(mem_state, action, reward) #added to replay 
-                net_state_current = self.preprocessor.process_state_for_network(state)
-                net_state_next = self.preprocessor.process_state_for_network(new_state)
+                net_state_next = self.preprocessor.preprocess_for_network(new_state)
                 output_qvals = self.calc_q_values(net_state_next)
                 target_f = self.calc_q_values(net_state_current)
-                target_f[action] = reward + gamma*max(output_qvals)
-                self.q_network.fit(net_state_current, target_f, 1, 1)
+                target_f[0][action] = reward + self.gamma*max(output_qvals[0])
+                self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), 1, 0)
+                state = new_state
                 #net_state is the phi, with four frames
     
+    def flatten_for_network(self, array):
+        shape = array.shape
+        total_elem = 1
+        for i in shape:
+            total_elem = total_elem*i
+        array = np.reshape(array,(1, total_elem))
+        return array
     def evaluate(self, env, num_episodes, max_episode_length=None):
         """Test your agent with a provided environment.
         

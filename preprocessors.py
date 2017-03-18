@@ -30,8 +30,10 @@ class HistoryPreprocessor(Preprocessor):
 
     def process_state_for_network(self, state):
         """You only want history when you're deciding the current action to take."""
-        np.delete(self.history_states, 0, 2)
-        np.append(self.history_states, state, 2)
+        state = np.reshape(state,(state.shape[0], state.shape[1], 1))
+        self.history_states = np.delete(self.history_states, 0, 2)
+        self.history_states = np.append(self.history_states, state, 2)
+        return self.history_states
 
     def reset(self):
         """Reset the history sequence.
@@ -107,11 +109,11 @@ class AtariPreprocessor(Preprocessor):
         Basically same as process state for memory, but this time
         outputs float32 images.
         """
-        #img = Image.fromarray(state, 'RGB')
-        img = Image.fromarray(state, 'L')
-        #img = img.crop((0, 20, 160, 210))
+        img = Image.fromarray(state, 'RGB')
+        #img = Image.fromarray(state, 'L')
+        img = img.crop((0, 20, 160, 210))
         img = img.convert('F')
-        #img = img.resize((84, 84), 3)
+        img = img.resize((84, 84), 3)
         np_img = np.asarray(img)
         return np_img
 

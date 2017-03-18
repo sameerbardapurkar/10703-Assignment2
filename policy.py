@@ -114,7 +114,7 @@ class GreedyEpsilonPolicy(Policy):
         int:
           The action index chosen.
         """
-        rand = random.uniform(0, 1)
+        rand = np.random.uniform(0, 1)
 
         if(rand <= self.epsilon):
             return np.random.randint(0, self.num_actions)
