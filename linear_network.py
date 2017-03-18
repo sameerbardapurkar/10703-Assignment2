@@ -5,7 +5,7 @@ from core import *
 from policy import *
 from preprocessors import *
 from objective import *
-
+from keras import optimizers
 class LinearReplayMemory(ReplayMemory):
 	def __init__(self, max_size, window_length):
 		self.max_size = max_size
@@ -19,8 +19,8 @@ class LinearReplayMemory(ReplayMemory):
 	def append(self, state, action, reward):
 		Memory[InsertIndex%max_size] = (state_count, state, action, reward,
 							   state_count + 1)
-		InsertIndex = InsertIndex + 1
-		state_count = state_count + 1
+		self.InsertIndex = InsertIndex + 1
+		self.state_count = state_count + 1
 
 	def end_episode(self, final_state, is_terminal):
 		self.final_state = final_state
@@ -29,9 +29,9 @@ class LinearReplayMemory(ReplayMemory):
 	def sample(self, batch_size, indexes=None):
 		samples = []
 		start_location = 0
-		end_location = max_size - 1
-		if(InsertIndex >= max_size):
-			start_location = InsertIndex%max_size
+		end_location = self.max_size - 1
+		if(self.InsertIndex >= self.max_size):
+			start_location = self.InsertIndex%max_size
 			end_location = start_location - 1
 		else:
 			start_location = 0
@@ -78,7 +78,15 @@ class LinearQNetwork(DQNAgent):
 			   num_burn_in,
 			   train_freq,
 			   batch_size):
-		pass
+		#self.q_network = q_network
+        self.preprocessor = preprocessor
+        self.gamma = gamma
+        self.policy = policy
+        self.target_update_freq = target_update_freq
+        self.num_burn_in = num_burn_in
+        self.train_freq = train_freq
+        self.batch_size = batch_size
+        self.num_actions = 6
 
 	def compile(self, optimizer, loss_func):
         """Setup all of the TF graph variables/ops.
@@ -97,6 +105,11 @@ class LinearQNetwork(DQNAgent):
         keras.optimizers.Optimizer class. Specifically the Adam
         optimizer.
         """
+        q_network.add(Dense(self.num_actions, 
+                                    input_dim=28224, activation = 'linear'))
+        q_network.compile(loss='objective.mean_huber_loss',
+                            optimizer=keras.optimizers.Adam())
+
         pass
 
     def calc_q_values(self, state):

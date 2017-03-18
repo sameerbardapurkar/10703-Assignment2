@@ -34,7 +34,9 @@ done = False
 samples = []
 while done == False:
     action = env.action_space.sample()
-
+    for i in env.action_space:
+    	print i
+    print env.action_space
     new_state, reward, done, info = env.step(action)
     env.render()
     state = new_state
