@@ -142,4 +142,9 @@ class PreprocessorSequence(Preprocessor):
     return history.process_state_for_network(state)
     """
     def __init__(self, preprocessors):
-        pass
+        self.preprocessors = preprocessors
+
+    def preprocess(state)
+        for preprocessor in preprocessors:
+            state = preprocessor.process_state_for_network(state)
+        
