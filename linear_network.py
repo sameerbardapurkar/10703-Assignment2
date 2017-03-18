@@ -4,7 +4,7 @@ from dqn import DQNAgent
 from core import *
 from policy import *
 from preprocessors import *
-from objective import *
+from objectives import *
 
 class LinearReplayMemory(ReplayMemory):
 	def __init__(self, max_size, window_length):
@@ -108,7 +108,7 @@ class LinearQNetwork(DQNAgent):
         ------
         Q-values for the state(s)
         """
-        pass
+		return (self.q_network).predict(state)        
 
     def select_action(self, state, **kwargs):
         """Select the action based on the current state.
@@ -131,7 +131,8 @@ class LinearQNetwork(DQNAgent):
         --------
         selected action
         """
-        pass
+        epsilon = 0.3; # hardcoded for now
+		return policy.GreedyEpsilonPolicy(self.num_actions, epsilon)		
 
     def update_policy(self):
         """Update your policy.
