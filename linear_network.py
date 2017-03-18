@@ -68,17 +68,18 @@ class LinearReplayMemory(ReplayMemory):
 		self.state_count = 0			
 
 class LinearQNetwork(DQNAgent):
-	def __init__(self,
-			     q_network,
-			     preprocessor,
-			     memory,
-			     policy,
-			     gamma,
-			     target_update_freq,
-			     num_burn_in,
-			     train_freq,
-			     batch_size):
-		self.q_network = q_network
+	
+    def __init__(self,
+    		     q_network,
+    		     preprocessor,
+    		     memory,
+    		     policy,
+    		     gamma,
+    		     target_update_freq,
+    		     num_burn_in,
+    		     train_freq,
+    		     batch_size): 
+        self.q_network = q_network
         self.preprocessor = preprocessor
         self.gamma = gamma
         self.policy = policy
@@ -88,7 +89,7 @@ class LinearQNetwork(DQNAgent):
         self.batch_size = batch_size
         self.num_actions = 6
 
-	def compile(self, optimizer=keras.optimizers.Adam(), loss_func):
+    def compile(self, optimizer=keras.optimizers.Adam(), loss_func):
         """Setup all of the TF graph variables/ops.
 
         This is inspired by the compile method on the
@@ -103,12 +104,10 @@ class LinearQNetwork(DQNAgent):
 
         The optimizer can be whatever class you want. We used the
         keras.optimizers.Optimizer class. Specifically the Ada#m
-        optimizer.
+        optimizer. 
         """
-
-        self.q_network.add(Dense(self.num_actions, input_dim=28224, activation = 'linear'))
-        self.q_network.compile(loss='objective.mean_huber_loss', optimizer=keras.optimizers.Adam())
-
+        (self.q_network).add(Dense(self.num_actions, input_dim=28224, activation = 'linear'))
+        (self.q_network).compile(loss='objective.mean_huber_loss', optimizer=keras.optimizers.Adam())
 
     def calc_q_values(self, state):
         """Given a state (or batch of states) calculate the Q-values.
@@ -119,7 +118,7 @@ class LinearQNetwork(DQNAgent):
         ------
         Q-values for the state(s)
         """
-		return (self.q_network).predict(state)        
+        return (self.q_network).predict(state)        
 
     def select_action(self, state, **kwargs):
         """Select the action based on the current state.
@@ -144,7 +143,7 @@ class LinearQNetwork(DQNAgent):
         """
         epsilon = 0.3; # hardcoded for now
         q_values = calculate_q_values(state)
-		return self.policy.select_action(q_values)		
+        return self.policy.select_action(q_values)		
 
     def update_policy(self):
         """Update your policy.
@@ -193,7 +192,7 @@ class LinearQNetwork(DQNAgent):
             done = False
             state = env.reset()
             self.preprocessor.reset()
-            while(done == False && length < max_episode_length)
+            while(done == False & length < max_episode_length)
                 action = select_action(state)
                 new_state, reward, done, info = env.step(action)
                 mem_state = 
@@ -208,10 +207,6 @@ class LinearQNetwork(DQNAgent):
                 target_f[action] = reward + gamma*max(output_qvals)
                 self.q_network.fit(net_state_current, target_f, 1, 1)
                 #net_state is the phi, with four frames
-
-
-
-
     
     def evaluate(self, env, num_episodes, max_episode_length=None):
         """Test your agent with a provided environment.

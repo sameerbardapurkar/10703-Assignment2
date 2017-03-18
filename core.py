@@ -36,10 +36,12 @@ class Sample:
       self.s_prime = s_prime
       self.terminal = terminal
 
-    def GetSample():
-      return[self.s, self.a, self.r, self.s_prime, self.terminal]
-    def process_image_frame(image):
+    def get_sample(self):
+      return [self.s, self.a, self.r, self.s_prime, self.terminal]
+
+    def process_image_frame(self, image):
       pass
+
 class Preprocessor:
     """Preprocessor base class.
 
