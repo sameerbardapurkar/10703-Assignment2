@@ -205,7 +205,6 @@ class LinearQNetwork(DQNAgent):
                     net_state_current = self.preprocessor.preprocess_for_network(state)
                     action = self.select_action(net_state_current)
                     new_state, reward, done, info = env.step(action)
-                    env.render()
                     #net_state_next = self.preprocessor.preprocess_for_network(net_state_next)
                     mem_state = self.preprocessor.preprocess_for_memory(state)
                     self.memory.append(mem_state, action, reward) #added to replay
@@ -226,7 +225,7 @@ class LinearQNetwork(DQNAgent):
                         target_f[0][action] = reward + self.gamma*max(output_qvals[0])
                         net_current_batch_flat[j] = (self.flatten_for_network(net_state_current))
                         target_batch_f[j] = (self.flatten_for_network(target_f))
-                    blah = self.q_network.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                    blah = self.q_network.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=1, callbacks=[keras.callbacks.History()], initial_epoch=0)
                     losses = losses + (blah.history['loss'][0])
                     state = new_state
                     length = length+1
@@ -243,7 +242,6 @@ class LinearQNetwork(DQNAgent):
                     net_state_current = self.preprocessor.preprocess_for_network(state)
                     action = self.select_action(net_state_current)
                     new_state, reward, done, info = env.step(action)
-
                     length = length+1
                     #env.render()
                     mem_state = self.preprocessor.preprocess_for_memory(new_state)
