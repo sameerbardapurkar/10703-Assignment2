@@ -176,6 +176,7 @@ class LinearQNetwork(DQNAgent):
                 net_state_current = self.preprocessor.preprocess_for_network(state)
                 action = self.select_action(net_state_current)
                 new_state, reward, done, info = env.step(action)
+                length = length+1
                 #env.render()
                 mem_state = self.preprocessor.preprocess_for_memory(new_state)
                 self.memory.append(mem_state, action, reward) #added to replay 
@@ -187,7 +188,7 @@ class LinearQNetwork(DQNAgent):
                 losses = losses + (blah.history['loss'][0])
                 state = new_state
                 #net_state is the phi, with four frames
-            print i, " : ", losses/10000
+            print i, " : ", losses/length
     def flatten_for_network(self, array):
         shape = array.shape
         total_elem = 1
