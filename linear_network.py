@@ -6,8 +6,9 @@ from policy import *
 from preprocessors import *
 import keras
 from keras import optimizers
+from keras import callbacks
 from objectives import *
-
+import matplotlib.pyplot as plt
 class LinearReplayMemory(ReplayMemory):
 	def __init__(self, max_size=10000, window_length=5):
 		self.max_size = max_size
@@ -109,7 +110,7 @@ class LinearQNetwork(DQNAgent):
         optimizer. 
         """
         (self.q_network).add(keras.layers.Dense(self.num_actions, input_dim=28224, activation = 'linear'))
-        (self.q_network).compile(loss='mse', optimizer=keras.optimizers.Adam())
+        (self.q_network).compile(loss=loss_func, optimizer=keras.optimizers.Adam())
 
     def calc_q_values(self, state):
         """Given a state (or batch of states) calculate the Q-values.
@@ -164,7 +165,7 @@ class LinearQNetwork(DQNAgent):
         """
         pass
 
-    def fit(self, env, num_iterations = 100, max_episode_length=1000):
+    def fit(self, env, num_iterations = 1000000, max_episode_length=1000):
         """Fit your model to the provided environment.
 
         Its a good idea to print out things like loss, average reward,
@@ -191,6 +192,7 @@ class LinearQNetwork(DQNAgent):
         """
         for i in range(0, num_iterations):
             length = 0
+            losses = 0
             done = False
             state = env.reset()
             self.preprocessor.reset()
@@ -199,17 +201,18 @@ class LinearQNetwork(DQNAgent):
                 
                 action = self.select_action(net_state_current)
                 new_state, reward, done, info = env.step(action)
-                env.render()
+                #env.render()
                 mem_state = self.preprocessor.preprocess_for_memory(new_state)
                 self.memory.append(mem_state, action, reward) #added to replay 
                 net_state_next = self.preprocessor.preprocess_for_network(new_state)
                 output_qvals = self.calc_q_values(net_state_next)
                 target_f = self.calc_q_values(net_state_current)
                 target_f[0][action] = reward + self.gamma*max(output_qvals[0])
-                self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), 1, 0)
+                blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                losses = losses + (blah.history['loss'][0])
                 state = new_state
                 #net_state is the phi, with four frames
-    
+            print i, " : ", losses/10000
     def flatten_for_network(self, array):
         shape = array.shape
         total_elem = 1

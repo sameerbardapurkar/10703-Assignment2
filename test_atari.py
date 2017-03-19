@@ -69,7 +69,7 @@ linear_q_net = LinearQNetwork(q_network, preprocessor, memory, policy, gamma,
 			   				  batch_size)
 
 #Define the loss function
-linear_q_net.compile()
+linear_q_net.compile(loss_func=mean_huber_loss)
 #Define the optimizer : Defaulted for now
 print("Created and compiled linear agent")
 
