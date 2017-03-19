@@ -20,7 +20,7 @@ class LinearReplayMemory(ReplayMemory):
     
     def append(self, state, action, reward):
         if(self.ind >= self.max_size):
-            self.memory.delete(0)
+            del self.memory[0]
         self.memory.append([self.ind, state, action, reward])
         self.ind += 1
 
@@ -166,6 +166,8 @@ class LinearQNetwork(DQNAgent):
           How long a single episode should last before the agent
           resets. Can help exploration.
         """
+        exp_replay = False
+
         for i in range(0, num_iterations):
             length = 0
             losses = 0
