@@ -9,6 +9,7 @@ from keras import optimizers
 from keras import callbacks
 from objectives import *
 import matplotlib.pyplot as plt
+import random
 
 class LinearReplayMemory(ReplayMemory):
 
@@ -17,7 +18,7 @@ class LinearReplayMemory(ReplayMemory):
         self.window_length = window_length
         self.memory = [0]*max_size
         self.ind = 0
-    
+
     def append(self, state, action, reward):
         if(self.ind >= self.max_size):
             del self.memory[0]
@@ -35,10 +36,19 @@ class LinearReplayMemory(ReplayMemory):
             batch_size = self.ind
         
         nums = range(0, self.ind)
-        chosen_nums = random.sample(num, batch_size) 
+        chosen_nums = random.sample(nums, batch_size) 
 
         for i in chosen_nums:
-            samples.append(self.memory[i])
+            x = np.zeros((84,84,4))
+            count = 0
+            for j in range(i - 3, i+1):
+                if j < 0:
+                    continue
+                np.delete(x, count, 2)
+                np.append(x, self.memory[j][1], 2)
+                count += 1
+
+            samples.append([x, self.memory[i][2], self.memory[i][3] ])
 
         return samples
     
@@ -165,32 +175,63 @@ class LinearQNetwork(DQNAgent):
         max_episode_length: int
           How long a single episode should last before the agent
           resets. Can help exploration.
-        """
-        exp_replay = False
+        """        
+        exp_replay_fixed_target = False
 
-        for i in range(0, num_iterations):
-            length = 0
-            losses = 0
-            done = False
-            state = env.reset()
-            self.preprocessor.reset()
-            while(done == False & length < max_episode_length):
-                net_state_current = self.preprocessor.preprocess_for_network(state)
-                action = self.select_action(net_state_current)
-                new_state, reward, done, info = env.step(action)
-                length = length+1
-                #env.render()
-                mem_state = self.preprocessor.preprocess_for_memory(new_state)
-                self.memory.append(mem_state, action, reward) #added to replay 
-                net_state_next = self.preprocessor.preprocess_for_network(new_state)
-                output_qvals = self.calc_q_values(net_state_next)
-                target_f = self.calc_q_values(net_state_current)
-                target_f[0][action] = reward + self.gamma*max(output_qvals[0])
-                blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
-                losses = losses + (blah.history['loss'][0])
-                state = new_state
-                #net_state is the phi, with four frames
-            print i, " : ", losses/length
+        if exp_replay_fixed_target :
+
+            for i in range(0, num_iterations):
+                length = 0
+                losses = 0
+                done = False
+                state = env.reset()
+                self.preprocessor.reset()
+                while(done == False & length < max_episode_length):
+                    net_state_current = self.preprocessor.preprocess_for_network(state)
+                    action = self.select_action(net_state_current)
+                    new_state, reward, done, info = env.step(action)
+                    length = length+1
+                    #env.render()
+                    mem_state = self.preprocessor.preprocess_for_memory(new_state)
+                    self.memory.append(mem_state, action, reward) #added to replay     
+                    net_state_next = self.preprocessor.preprocess_for_network(new_state)
+                    output_qvals = self.calc_q_values(net_state_next)
+                    target_f = self.calc_q_values(net_state_current)
+                    target_f[0][action] = reward + self.gamma*max(output_qvals[0])
+                    blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                    losses = losses + (blah.history['loss'][0])
+                    state = new_state
+                    #net_state is the phi, with four frames
+                
+                print i, " : ", losses/length
+
+        else :
+
+            for i in range(0, num_iterations):
+                length = 0
+                losses = 0
+                done = False
+                state = env.reset()
+                self.preprocessor.reset()
+                while(done == False & length < max_episode_length):
+                    net_state_current = self.preprocessor.preprocess_for_network(state)
+                    action = self.select_action(net_state_current)
+                    new_state, reward, done, info = env.step(action)
+                    mem_state = self.preprocessor.preprocess_for_memory(state)
+                    self.memory.append(mem_state, action, reward) #added to replay
+                    batch_size_num = 100
+                    sample = self.memory.sample(batch_size_num)
+                    output_qvals = self.calc_q_values(net_state_next)
+                    target_f = self.calc_q_values(net_state_current)
+                    target_f[0][action] = reward + self.gamma*max(output_qvals[0])
+                    blah = self.q_network.fit(net_current_batch, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                    losses = losses + (blah.history['loss'][0])
+                    state = new_state
+                    length = length+1
+                    #net_state is the phi, with four frames
+                
+                print i, " : ", losses/length        
+    
     def flatten_for_network(self, array):
         shape = array.shape
         total_elem = 1
@@ -198,6 +239,7 @@ class LinearQNetwork(DQNAgent):
             total_elem = total_elem*i
         array = np.reshape(array,(1, total_elem))
         return array
+    
     def evaluate(self, env, num_episodes, max_episode_length=None):
         """Test your agent with a provided environment.
         
