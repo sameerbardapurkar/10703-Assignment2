@@ -9,65 +9,42 @@ from keras import optimizers
 from keras import callbacks
 from objectives import *
 import matplotlib.pyplot as plt
+
 class LinearReplayMemory(ReplayMemory):
-	def __init__(self, max_size=10000, window_length=5):
-		self.max_size = max_size
-		self.window_length = window_length
-		self.Memory = [0]*max_size
-		self.InsertIndex = 0
-		self.final_state = 0
-		self.is_terminal = 0
-		self.state_count = 0
 
-	def append(self, state, action, reward):
-		self.Memory[self.InsertIndex%self.max_size] = (self.state_count, state, action, reward,
-							   self.state_count + 1)
-		self.InsertIndex = self.InsertIndex + 1
-		self.state_count = self.state_count + 1
+    def __init__(self, max_size=10000, window_length=5):
+        self.max_size = max_size
+        self.window_length = window_length
+        self.memory = [0]*max_size
+        self.ind = 0
+    
+    def append(self, state, action, reward):
+        if(self.ind >= self.max_size):
+            self.memory.delete(0)
+        self.memory.append([self.ind, state, action, reward])
+        self.ind += 1
 
-	def end_episode(self, final_state, is_terminal):
-		self.final_state = final_state
-		self.is_terminal = is_terminal
+    def end_episode(self, final_state, is_terminal):
+        self.final_state = final_state
+        self.is_terminal = is_terminal
+        
+    def sample(self, batch_size, indexes=None):
+        samples = [0]*batch_size
+        
+        if(self.ind <= batch_size):
+            batch_size = self.ind
+        
+        nums = range(0, self.ind)
+        chosen_nums = random.sample(num, batch_size) 
 
-	def sample(self, batch_size, indexes=None):
-		samples = []
-		start_location = 0
-		end_location = self.max_size - 1
-		if(self.InsertIndex >= self.max_size):
-			start_location = self.InsertIndex%max_size
-			end_location = start_location - 1
-		else:
-			start_location = 0
-			end_location = InsertIndex - 1
+        for i in chosen_nums:
+            samples.append(self.memory[i])
 
-		stop = False
-		location = start_location
-		count = 0
-		while(stop == False & len(samples) <= batch_size):
-			terminal = False
-			(state_count, state, action, reward, state_succ_count) = self.Memory[location]
-			location = (location + 1)%max_size
-			(succ_state_count, succ_state, succ_action, succ_reward,
-				succ_state_succ_count) = self.Memory[location]
-			if(succ_state_count != state_succ_count):
-				print "Warning, invalid successor"
-			samples.append(Sample(state, action, reward, succ_state, terminal))
-			if(location == end_location):
-				stop = True
-				if(succ_state != self.final_state):
-					print "Warning, memory appears to be corrupted"
-				else:
-					terminal = True
-					samples.append(Sample(succ_state, succ_action, succ_reward,
-										  succ_state, terminal))
-		return samples
-
-	def clear(self):
-		self.Memory = [0]*max_size
-		self.InsertIndex = 0
-		self.final_state = 0
-		self.is_terminal = 0
-		self.state_count = 0			
+        return samples
+    
+    def clear(self):
+        self.memory = np.zeros((max_size, 4))
+		
 
 class LinearQNetwork(DQNAgent):
 	
@@ -144,7 +121,6 @@ class LinearQNetwork(DQNAgent):
         --------
         selected action
         """
-        epsilon = 0.3; # hardcoded for now
         q_values = self.calc_q_values(state)
         return self.policy.select_action(q_values)		
 
@@ -198,7 +174,6 @@ class LinearQNetwork(DQNAgent):
             self.preprocessor.reset()
             while(done == False & length < max_episode_length):
                 net_state_current = self.preprocessor.preprocess_for_network(state)
-                
                 action = self.select_action(net_state_current)
                 new_state, reward, done, info = env.step(action)
                 #env.render()

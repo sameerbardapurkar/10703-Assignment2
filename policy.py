@@ -139,7 +139,7 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
 
     """
 
-    def __init__(self, policy, attr_name, start_value, end_value,
+    def __init__(self, policy, attr_name, num_actions, start_value, end_value,
                  num_steps):  # noqa: D102
         self.epsilon_start = start_value
         self.epsilon_end = end_value
@@ -148,7 +148,7 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
         self.num_actions = num_actions     
         self.initial_epsilon = start_value
 
-    def select_action(self, **kwargs):
+    def select_action(self, q_values, **kwargs):
         """Decay parameter and select action.
 
         Parameters
@@ -166,11 +166,10 @@ class LinearDecayGreedyEpsilonPolicy(Policy):
         self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
 
         if(self.epsilon_start <= self.epsilon_end):
-            reset()
+            self.reset()
             self.epsilon_start = self.epsilon_start - (self.initial_epsilon - self.epsilon_end)/self.num_steps
         
-
-        rand = random.uniform(0, 1)
+        rand = np.random.uniform(0, 1)
 
         if(rand <= self.epsilon_end):
             return np.random.randint(0, self.num_actions)

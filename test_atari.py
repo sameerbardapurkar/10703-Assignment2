@@ -46,7 +46,7 @@ preprocessor = PreprocessorSequence(atari_preproc, history_preproc)
 memory = LinearReplayMemory()
 
 #make the policy
-policy = GreedyEpsilonPolicy(6, 0.35)
+policy = LinearDecayGreedyEpsilonPolicy(0, 0, 6, 0.8, 0.2, 1000)
 
 #take the gamma, nicely
 gamma = 0.9
