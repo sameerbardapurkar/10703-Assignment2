@@ -72,7 +72,7 @@ class LinearReplayMemory(ReplayMemory):
         self.memory = np.zeros((max_size, 4))
 		
 
-class LinearQNetwork(DQNAgent):
+class LinearQNetworkMoving(DQNAgent):
 	
     def __init__(self,
     		     q_network,

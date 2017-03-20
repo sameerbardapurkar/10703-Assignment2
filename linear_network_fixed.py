@@ -7,10 +7,12 @@ from preprocessors import *
 import keras
 from keras import optimizers
 from keras import callbacks
+from keras.models import Model
 from objectives import *
 import matplotlib.pyplot as plt
 import random
 import copy
+from keras.models import Sequential
 
 class LinearReplayMemory(ReplayMemory):
 
@@ -44,7 +46,7 @@ class LinearReplayMemory(ReplayMemory):
         chosen_nums = random.sample(nums, batch_size) 
 
         for i in chosen_nums:
-            x = np.zeros((84,84,4), dtype='float')
+            x = np.zeros((84,84,4))
             
             for j in range(i - 3, i+1):
                 if j < 0:
@@ -53,7 +55,7 @@ class LinearReplayMemory(ReplayMemory):
                 shape = self.memory[j][1].shape
                 np.append(x, np.reshape(self.memory[j][1],(shape[0], shape[1], 1)), 2)
                 
-            x_prime = np.zeros((84,84,4), dtype='float')
+            x_prime = np.zeros((84,84,4))
             
             for j in range(i - 2, i+2):
                 if j < 0:
@@ -66,41 +68,14 @@ class LinearReplayMemory(ReplayMemory):
             sample_actions.append(self.memory[i][2])
             sample_rewards.append(self.memory[i][3])
             sample_states_prime.append(x_prime)
+
         return (sample_states, sample_actions, sample_rewards, sample_states_prime)
-
-        def get_state_from_index(self, index):
-            if(index >= self.max_size):
-                index = self.max_size - 2
-            sample_states = []
-            sample_actions = []
-            sample_rewards = []
-            sample_states_prime = []
-            
-            chosen_nums = [index]
-
-            for i in chosen_nums:
-                x = np.zeros((84,84,4), dtype='float')
-                for j in range(i - 3, i+1):
-                    if j < 0:
-                        continue
-                    np.delete(x, 0, 2)
-                    shape = self.memory[j][1].shape
-                    np.append(x, np.reshape(self.memory[j][1],(shape[0], shape[1], 1)), 2)
-                x_prime = np.zeros((84,84,4), dtype='float')
-                
-                for j in range(i - 2, i+2):
-                    if j < 0:
-                        continue
-                    np.delete(x_prime, 0, 2)
-                    shape = self.memory[j][1].shape
-                    np.append(x_prime, np.reshape(self.memory[j][1],(shape[0], shape[1], 1)), 2)
-            return (x,x_prime)
     
     def clear(self):
         self.memory = np.zeros((max_size, 4))
 		
 
-class LinearQNetwork(DQNAgent):
+class LinearQNetworkFixed(DQNAgent):
 	
     def __init__(self,
     		     q_network,
@@ -122,6 +97,8 @@ class LinearQNetwork(DQNAgent):
         self.train_freq = train_freq
         self.batch_size = batch_size
         self.num_actions = 6
+        self.weights = []
+
 
     def compile(self, loss_func='mse', optimizer=keras.optimizers.Adam()):
         """Setup all of the TF graph variables/ops.
@@ -142,8 +119,11 @@ class LinearQNetwork(DQNAgent):
         """
         (self.q_network).add(keras.layers.Dense(self.num_actions, input_dim=28224, activation = 'linear'))
         (self.q_network).compile(loss=loss_func, optimizer=keras.optimizers.Adam())
-
-    def calc_q_values(self, state):
+        weights = []
+        for i in range(0, len(self.q_network.layers)):
+            weights.append(self.q_network.layers[i].get_weights)
+        
+    def calc_q_values(self, state, predict_next_state=False):
         """Given a state (or batch of states) calculate the Q-values.
 
         Basically run your network on these states.
@@ -152,7 +132,19 @@ class LinearQNetwork(DQNAgent):
         ------
         Q-values for the state(s)
         """
-        return self.q_network.predict(self.flatten_for_network(state))      
+        weights_backup = []
+        prediction = []
+        if(predict_next_state == True):
+            for i in range(0, len(self.q_network.layers)):
+                weights_backup.append(self.q_network.layers[i].get_weights())
+            for i in range(0, len(self.q_network.layers)):
+                self.q_network.layers[i].set_weights(self.weights[i])
+            prediction = self.q_network.predict(self.flatten_for_network(state))
+            for i in range(0, len(weights_backup)):
+                self.q_network.layers[i].set_weights(weights_backup[i]) 
+        else:
+            prediction = self.q_network.predict(self.flatten_for_network(state))
+        return prediction
 
     def select_action(self, state, **kwargs):
         """Select the action based on the current state.
@@ -220,7 +212,7 @@ class LinearQNetwork(DQNAgent):
           How long a single episode should last before the agent
           resets. Can help exploration.
         """        
-        exp_replay= False
+        exp_replay= True
 
         if exp_replay:
             for i in range(0, num_iterations):
@@ -230,9 +222,10 @@ class LinearQNetwork(DQNAgent):
                 state = env.reset()
                 self.preprocessor.reset()
                 while(done == False & length < max_episode_length):
-                    net_state_curr = self.preprocessor.preprocess_for_network(state)
-                    action = self.select_action(net_state_curr)
+                    net_state_current = self.preprocessor.preprocess_for_network(state)
+                    action = self.select_action(net_state_current)
                     new_state, reward, done, info = env.step(action)
+                    #net_state_next = self.preprocessor.preprocess_for_network(net_state_next)
                     mem_state = self.preprocessor.preprocess_for_memory(state)
                     self.memory.append(mem_state, action, reward) #added to replay
                     batch_size_num = 100
@@ -252,10 +245,15 @@ class LinearQNetwork(DQNAgent):
                         target_f[0][action] = reward + self.gamma*max(output_qvals[0])
                         net_current_batch_flat[j] = (self.flatten_for_network(net_state_current))
                         target_batch_f[j] = (self.flatten_for_network(target_f))
-                    blah = self.q_network.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=0, callbacks=[keras.callbacks.History(), keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=False)], initial_epoch=0)
+                    blah = self.q_network.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=1, callbacks=[keras.callbacks.History()], initial_epoch=0)
                     losses = losses + (blah.history['loss'][0])
                     state = new_state
                     length = length+1
+                    if(length%self.target_update_freq == 0):
+                       self.weights = []
+                       for i in range(0, len(self.q_network.layers)):
+                            self.weights.append(self.q_network.layers[i].get_weights())
+                        
                 print i, " : ", losses/length        
                 #net_state is the phi, with four frames
         else:
@@ -265,38 +263,21 @@ class LinearQNetwork(DQNAgent):
                 done = False
                 state = env.reset()
                 self.preprocessor.reset()
-                #net_state_current = self.preprocessor.preprocess_for_network(state)
-                #print net_state_current.shape
-                #mem_state = self.preprocessor.process_state_for_memory(state)
-                #self.memory.append(mem_state)
-
                 while(done == False & length < max_episode_length):
-                    net_state_current = copy.deepcopy(self.preprocessor.preprocess_for_network(state))
+                    net_state_current = self.preprocessor.preprocess_for_network(state)
                     action = self.select_action(net_state_current)
                     new_state, reward, done, info = env.step(action)
-
                     length = length+1
                     #env.render()
-                    mem_state = self.preprocessor.preprocess_for_memory(state)
-                    self.memory.append(mem_state, action, reward) #added to replay
-                    net_state_next = copy.deepcopy(np.delete(net_state_current, 0, 2))
-                    net_state_next = np.append(net_state_next, np.reshape(self.preprocessor.preprocess_for_memory(new_state),(84,84,1)))
+                    mem_state = self.preprocessor.preprocess_for_memory(new_state)
+                    self.memory.append(mem_state, action, reward) #added to replay     
+                    net_state_next = self.preprocessor.preprocess_for_network(new_state)
                     output_qvals = self.calc_q_values(net_state_next)
                     target_f = self.calc_q_values(net_state_current)
-                    print target_f
-                    print reward
-                     
                     target_f[0][action] = reward + self.gamma*max(output_qvals[0])
-                    
-                    if(reward != 0.0):  
-                        print "..."
-                        print target_f
-                        print "======================="
-                    
-                    blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=1, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                    blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
                     losses = losses + (blah.history['loss'][0])
                     state = new_state
-                    net_state_current = copy.deepcopy(net_state_next)
                     #net_state is the phi, with four frames
                 print i, " : ", losses/length
     
