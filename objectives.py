@@ -5,7 +5,7 @@ import keras
 from keras import backend as K
 import semver
 
-def huber_loss(y_true, y_pred, max_grad=1.):
+def huber_loss(y_true, y_pred, max_grad=1.345):
     """Calculate the huber loss.
 
     See https://en.wikipedia.org/wiki/Huber_loss
