@@ -77,7 +77,7 @@ deep_q_net.compile(loss_func=mean_huber_loss)
 print("Created and compiled linear agent")
 
 #now run fit
-deep_q_net.fit(env, num_iterations=5, max_episode_length=10)
+deep_q_net.fit(env, num_iterations=5000000, max_episode_length=1000)
 
 #save the models
 q_network_online_yaml = q_network_online.to_yaml()
