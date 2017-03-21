@@ -6,7 +6,8 @@ updated with the total normalized reward (up to a learning rate)
 Then a standard supervised learning backprop on the entire batch is
 executed
 """
-
+import sys
+sys.path.append("../../")
 import numpy as np
 import numpy.matlib 
 import core

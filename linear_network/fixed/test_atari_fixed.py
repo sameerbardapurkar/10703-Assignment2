@@ -6,7 +6,8 @@ updated with the total normalized reward (up to a learning rate)
 Then a standard supervised learning backprop on the entire batch is
 executed
 """
-
+import sys
+sys.path.append("../..")
 import numpy as np
 import numpy.matlib 
 import core
@@ -28,7 +29,7 @@ from policy import *
 from preprocessors import *
 from keras import optimizers
 from objectives import *
-from linear_network_moving import *
+from linear_network_fixed import *
 
 #initialize neural network to store policy
 
@@ -64,7 +65,7 @@ train_freq = 10
 batch_size = 100
 
 #Make the linear q network
-linear_q_net = LinearQNetworkMoving(q_network, preprocessor, memory, policy, gamma,
+linear_q_net = LinearQNetworkFixed(q_network, preprocessor, memory, policy, gamma,
 			   				  target_update_freq, num_burn_in, train_freq,
 			   				  batch_size)
 

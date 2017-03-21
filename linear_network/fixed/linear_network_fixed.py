@@ -119,9 +119,8 @@ class LinearQNetworkFixed(DQNAgent):
         """
         (self.q_network).add(keras.layers.Dense(self.num_actions, input_dim=28224, activation = 'linear'))
         (self.q_network).compile(loss=loss_func, optimizer=keras.optimizers.Adam())
-        weights = []
         for i in range(0, len(self.q_network.layers)):
-            weights.append(self.q_network.layers[i].get_weights)
+            self.weights.append(self.q_network.layers[i].get_weights())
         
     def calc_q_values(self, state, predict_next_state=False):
         """Given a state (or batch of states) calculate the Q-values.
@@ -240,12 +239,12 @@ class LinearQNetworkFixed(DQNAgent):
                         net_state_next = net_next_batch[j]
                         action = actions_set[j]
                         reward = rewards[j]
-                        output_qvals = self.calc_q_values(net_state_next)
+                        output_qvals = self.calc_q_values(net_state_next, True)
                         target_f = self.calc_q_values(net_state_current)
                         target_f[0][action] = reward + self.gamma*max(output_qvals[0])
                         net_current_batch_flat[j] = (self.flatten_for_network(net_state_current))
                         target_batch_f[j] = (self.flatten_for_network(target_f))
-                    blah = self.q_network.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=1, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                    blah = self.q_network.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=1, callbacks=[keras.callbacks.History(), keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=False)], initial_epoch=0)
                     losses = losses + (blah.history['loss'][0])
                     state = new_state
                     length = length+1
@@ -275,7 +274,7 @@ class LinearQNetworkFixed(DQNAgent):
                     output_qvals = self.calc_q_values(net_state_next)
                     target_f = self.calc_q_values(net_state_current)
                     target_f[0][action] = reward + self.gamma*max(output_qvals[0])
-                    blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=0, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                    blah = self.q_network.fit(self.flatten_for_network(net_state_current), self.flatten_for_network(target_f), epochs=1, verbose=0, callbacks=[keras.callbacks.History(), keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=False)], initial_epoch=0)
                     losses = losses + (blah.history['loss'][0])
                     state = new_state
                     #net_state is the phi, with four frames
