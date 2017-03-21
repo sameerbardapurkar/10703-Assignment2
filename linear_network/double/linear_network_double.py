@@ -226,7 +226,9 @@ class LinearQNetworkDouble(DQNAgent):
                     new_state, reward, done, info = env.step(action)
                     #net_state_next = self.preprocessor.preprocess_for_network(net_state_next)
                     mem_state = self.preprocessor.preprocess_for_memory(state)
-                    self.memory.append(mem_state, action, reward) #added to replay
+                    if(length == max_episode_length - 1):
+                        done = True
+                    self.memory.append(mem_state, action, reward, done) #added to replay
                     batch_size_num = 100
                     (net_current_batch, actions_set, rewards, net_next_batch) = self.memory.sample(batch_size_num)
                     if(batch_size_num > len(actions_set)): 
@@ -270,7 +272,9 @@ class LinearQNetworkDouble(DQNAgent):
                     length = length+1
                     #env.render()
                     mem_state = self.preprocessor.preprocess_for_memory(new_state)
-                    self.memory.append(mem_state, action, reward) #added to replay     
+                    if(length == max_episode_length - 1):
+                        done = True
+                    self.memory.append(mem_state, action, reward, done) #added to replay     
                     net_state_next = self.preprocessor.preprocess_for_network(new_state)
                     (output_qvals, prediction1) = self.calc_q_values(net_state_next)
                     (target_f, prediction2) = self.calc_q_values(net_state_current)

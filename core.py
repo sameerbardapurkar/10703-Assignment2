@@ -1,3 +1,6 @@
+import copy
+import random
+import numpy as np
 """Core classes."""
 class Sample:
     """Represents a reinforcement learning sample.
@@ -201,27 +204,55 @@ class ReplayMemory:
     clear()
       Reset the memory. Deletes all references to the samples.
     """
-    def __init__(self, max_size, window_length):
-        """Setup memory.
+    def __init__(self, max_size=1000000, window_length=5):
+        self.max_size = max_size
+        self.window_length = window_length
+        self.memory = []
+        self.ind = 0
 
-        You should specify the maximum size o the memory. Once the
-        memory fills up oldest values should be removed. You can try
-        the collections.deque class as the underlying storage, but
-        your sample method will be very slow.
-
-        We recommend using a list as a ring buffer. Just track the
-        index where the next sample should be inserted in the list.
-        """
-        pass
-
-    def append(self, state, action, reward):
-        raise NotImplementedError('This method should be overridden')
+    def append(self, state, action, reward, is_terminal):
+        if(self.ind >= self.max_size):
+            del self.memory[0]
+        self.memory.append([self.ind, state, action, reward, is_terminal])
+        self.ind += 1
 
     def end_episode(self, final_state, is_terminal):
-        raise NotImplementedError('This method should be overridden')
-
+        self.final_state = final_state
+        self.is_terminal = is_terminal
+        
     def sample(self, batch_size, indexes=None):
-        raise NotImplementedError('This method should be overridden')
+        sample_states = []
+        sample_actions = []
+        sample_rewards = []
+        sample_states_prime = []
+        sample_ind = self.ind
+        if(self.ind >= self.max_size):
+            sample_ind = self.max_size
+        nums = range(0, sample_ind - 1)
+        if(batch_size > len(nums)):
+            batch_size = len(nums)
+        chosen_nums = random.sample(nums, batch_size) 
 
+        for i in chosen_nums:
+          x = np.zeros((84,84,4))
+          count = 3
+          for j in range(i, i - 4, -1):
+              if (self.memory[j][4] == True and j !=i) or j < 0:
+                break
+              x[:,:,count] = self.memory[j][1]
+              count = count - 1
+          if self.memory[i][4] == True: #sampled a terminal state
+              x_prime = copy.deepcopy(x)
+          else:
+            x_prime =  copy.deepcopy(x)
+            x_prime = np.delete(x_prime, 0, 2)
+            shape = self.memory[i+1][1].shape
+            x_prime = np.append(x_prime, np.reshape(self.memory[i+1][1],(shape[0], shape[1], 1)), 2)
+          sample_states.append(x)
+          sample_actions.append(self.memory[i][2])
+          sample_rewards.append(self.memory[i][3])
+          sample_states_prime.append(x_prime)
+        return (sample_states, sample_actions, sample_rewards, sample_states_prime)
+    
     def clear(self):
-        raise NotImplementedError('This method should be overridden')
+        self.memory = np.zeros((max_size, 4))

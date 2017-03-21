@@ -45,7 +45,7 @@ history_preproc = HistoryPreprocessor(4)
 atari_preproc = AtariPreprocessor()
 preprocessor = PreprocessorSequence(atari_preproc, history_preproc)
 #make the replay memory
-memory = LinearReplayMemory()
+memory = ReplayMemory()
 
 #make the policy
 policy = LinearDecayGreedyEpsilonPolicy(0, 0, 6, 0.8, 0.2, 100000)
@@ -54,7 +54,7 @@ policy = LinearDecayGreedyEpsilonPolicy(0, 0, 6, 0.8, 0.2, 100000)
 gamma = 0.9
 
 #target_update_freq : DUMMY
-target_update_freq = 10
+target_update_freq = 10000
 
 #num_burn_in : DUMMY
 num_burn_in = 10
@@ -63,7 +63,7 @@ num_burn_in = 10
 train_freq = 10
 
 #batch_size
-batch_size = 100
+batch_size = 32
 
 #Make the linear q network
 linear_q_net = LinearQNetworkDouble(q_network_online, q_network_target, preprocessor, memory, policy, gamma,
