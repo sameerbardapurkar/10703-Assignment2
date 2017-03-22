@@ -225,6 +225,7 @@ class ReplayMemory:
         sample_actions = []
         sample_rewards = []
         sample_states_prime = []
+        sample_is_terminal = []
         sample_ind = self.ind
         if(self.ind >= self.max_size):
             sample_ind = self.max_size
@@ -252,7 +253,8 @@ class ReplayMemory:
           sample_actions.append(self.memory[i][2])
           sample_rewards.append(self.memory[i][3])
           sample_states_prime.append(x_prime)
-        return (sample_states, sample_actions, sample_rewards, sample_states_prime)
+          sample_is_terminal.append(self.memory[i+1][4])
+        return (sample_states, sample_actions, sample_rewards, sample_states_prime, sample_is_terminal)
     
     def clear(self):
         self.memory = np.zeros((max_size, 4))
