@@ -156,7 +156,7 @@ class DeepQNetworkDouble(DQNAgent):
         self.q_network_target.compile(loss=loss_func,optimizer=adam)
         
         
-    def calc_q_values(self, state, predict_next_state=False):
+    def calc_q_values(self, state, is_terminal=False, predict_next_state=False):
         """Given a state (or batch of states) calculate the Q-values.
 
         Basically run your network on these states.
@@ -170,8 +170,11 @@ class DeepQNetworkDouble(DQNAgent):
             index = np.argmax(q_vals_online[0])
 
             q_vals_target =  self.q_network_target.predict(self.flatten_for_network(state))
-            #prediction = q_vals_target[0][index]
-            return (q_vals_target, index)
+            if(is_terminal == True):
+                q_vals_target = np.multiply(0.0, q_vals_target)
+                return(q_vals_target, index)
+            else:
+                return (q_vals_target, index)
         else:
             q_vals_online = self.q_network_online.predict(self.flatten_for_network(state))
             return q_vals_online
@@ -258,23 +261,23 @@ class DeepQNetworkDouble(DQNAgent):
                     done = True
                 self.memory.append(mem_state, action, reward, done) #added to replay
                 batch_size_num = self.batch_size
-                (net_current_batch, actions_set, rewards, net_next_batch) = self.memory.sample(batch_size_num)
+                (net_current_batch, actions_set, rewards, net_next_batch, is_terminal_array) = self.memory.sample(batch_size_num)
                 if(batch_size_num > len(actions_set)): 
                     continue #wait until we have atleast 100 samples
                 net_current_batch_flat = []
                 target_batch_f = np.zeros((len(actions_set), self.num_actions))
-                net_current_batch = np.zeros((len(actions_set),84, 84, 4))
+                net_current_batch_flat = np.zeros((len(actions_set),84, 84, 4))
                 for j in range(0, len(actions_set)):
                     net_state_current = net_current_batch[j]
                     net_state_next = net_next_batch[j]
                     action = actions_set[j]
                     reward = rewards[j]
-                    (output_qvals, prediction) = self.calc_q_values(net_state_next, True)
+                    (output_qvals, prediction) = self.calc_q_values(net_state_next, is_terminal_array[j], True)
                     target_f = self.calc_q_values(net_state_current)
                     target_f[0][action] = reward + self.gamma*(output_qvals[0][prediction])
-                    net_current_batch[j] = (net_state_current)
+                    net_current_batch_flat[j,:,:,:] = (net_state_current)
                     target_batch_f[j] = (self.flatten_for_network(target_f))
-                blah = self.q_network_online.fit(net_current_batch, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=1, callbacks=[keras.callbacks.History()], initial_epoch=0)
+                blah = self.q_network_online.fit(net_current_batch_flat, target_batch_f, batch_size=batch_size_num, epochs=1, verbose=1, callbacks=[keras.callbacks.History()], initial_epoch=0)
                 losses = losses + (blah.history['loss'][0])
                 state = new_state
                 length = length+1
